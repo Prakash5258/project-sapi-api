@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="inputInitilizationInsert_Flow" doc:id="fe7f23d9-ae14-4aa0-beae-9e05a9bb5051" >
+		<ee:transform doc:name="insertData variables" doc:id="e0519d8d-bd48-4daf-88e0-7974af6abf23">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="customerName"><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.customerName]]></ee:set-variable>
+				<ee:set-variable variableName="inputPayload"><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+				<ee:set-variable variableName="bank"><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.bank]]></ee:set-variable>
+				<ee:set-variable variableName="accountType"><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.accountType]]></ee:set-variable>
+				<ee:set-variable variableName="branchName"><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.branchName]]></ee:set-variable>
+				<ee:set-variable variableName="contact" ><![CDATA[%dw 2.0
+output application/json
+---
+payload.contact]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="inputInitilizationCheckBalence_Flow" doc:id="5505bd88-6002-4ac8-a403-3a22addcc2fa" >
+		<ee:transform doc:name="checkBalece variables" doc:id="802f521b-e75f-48df-8b7b-67b14bf51ec0" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="bank" ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.bank]]></ee:set-variable>
+				<ee:set-variable variableName="accountType" ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.accountType]]></ee:set-variable>
+				<ee:set-variable variableName="inputPayload" ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+</mule>

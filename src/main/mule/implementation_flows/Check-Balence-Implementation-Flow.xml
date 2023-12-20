@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<flow name="Check-Balence-Implementation-FlowFlow" doc:id="0f892d92-46d3-4764-96a3-e10ccfbad9b5" >
+		<db:select doc:name="Select" doc:id="1ab9c7e0-ee22-4b04-a394-124ee61d4e85" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from bharathi_db.Bank_Transactions where custAccNum=:custAccNum and bankName=:bankName]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	custAccNum: vars.inputPayload.accountNum,
+	bankName: vars.bank
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="23287ae5-a58b-4409-97d8-78e2b1606f86" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload reduce ((item, accumulator) -> 
+item)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="c2ce6395-5329-4a04-888e-1da8c4a8c681" >
+			<when expression="#[sizeOf(payload)&gt;0]">
+				<choice doc:name="Choice" doc:id="8b3c7ea9-6fc4-4346-8ce0-234cea9e8022" >
+					<when expression="#[payload.accountStatus == 'Active']">
+						<choice doc:name="Choice" doc:id="63da3798-6368-4155-bdd2-4ae24cdbee83" >
+							<when expression="#[payload.atmPin == vars.inputPayload.atmPin]">
+								<ee:transform doc:name="Transform Message" doc:id="dc7b1247-c6a1-4a07-b5fa-4f7458cdc624" >
+									<ee:message >
+										<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+" transaction is successfully processing"]]></ee:set-payload>
+									</ee:message>
+								</ee:transform>
+							</when>
+							<otherwise >
+								<set-variable value="#[payload.wrongPin + 1]" doc:name="Set Variable" doc:id="81a02b81-40c4-4b46-9100-0312f04aa082" variableName="wrongPin"/>
+								<db:update doc:name="Update" doc:id="e162aced-7c2e-41bb-b4dc-3a052cb5ed5a" config-ref="Database_Config">
+									<db:sql ><![CDATA[update BHARATHI_DB.BANK_TRANSACTIONS set wrongPin=:attempts where custAccNum=:custAccNum]]></db:sql>
+									<db:input-parameters ><![CDATA[#[{
+	attempts: vars.wrongPin,
+	custAccNum: payload.custAccNum
+}]]]></db:input-parameters>
+								</db:update>
+								<ee:transform doc:name="Transform Message" doc:id="83535ebb-80e3-486e-87ec-d892fd879d26" >
+									<ee:message >
+										<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"You Entered Wrong Pin. Login Attempt Failed: Remaining Attempts " ++ (3 - vars.wrongPin as Number)
+]]></ee:set-payload>
+									</ee:message>
+								</ee:transform>
+							</otherwise>
+						</choice>
+					</when>
+					<otherwise >
+						<ee:transform doc:name="Transform Message" doc:id="cf92f286-dfcc-4614-b327-36f1a5417f09" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"Account "++ vars.inputPayload.accountNum ++ " temporarily blocked. Please visit nearest Branch"]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</otherwise>
+				</choice>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="0fc2e7c2-2a67-49d0-9db5-7c2c89de6193">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+"Account " ++ vars.inputPayload.accountNum ++ " does not exist...! Enter Valid 
+Details "]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>
